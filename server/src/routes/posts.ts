@@ -82,7 +82,10 @@ postRoute.post("/", async (c) => {
     const { title, content } = body;
 
     if (!title || !content)
-      return c.json({ message: "Missing title or content" }, 400);
+      return c.json(
+        { success: false, message: "Missing title or content" },
+        400
+      );
 
     const result = await pool.query(
       `INSERT INTO posts (user_id, title, content)
@@ -91,10 +94,17 @@ postRoute.post("/", async (c) => {
       [user.id, title.trim(), content.trim()]
     );
 
-    return c.json({ success: true, data: result.rows[0] }, 201);
+    return c.json(
+      {
+        success: true,
+        message: "Post created successfully",
+        data: result.rows[0],
+      },
+      201
+    );
   } catch (err) {
     console.error(err);
-    return c.json({ message: "Server error" }, 500);
+    return c.json({ success: false, message: "Server error" }, 500);
   }
 });
 
@@ -108,12 +118,14 @@ postRoute.put("/:id", async (c) => {
 
     const postRes = await pool.query("SELECT * FROM posts WHERE id = $1", [id]);
     if (postRes.rows.length === 0)
-      return c.json({ message: "Post not found" }, 404);
+      return c.json({ success: false, message: "Post not found" }, 404);
 
     const post = postRes.rows[0];
-    if (user.role !== "admin" && post.user_id !== user.id) {
-      return c.json({ message: "Forbidden: not your post" }, 403);
-    }
+    if (user.role !== "admin" && post.user_id !== user.id)
+      return c.json(
+        { success: false, message: "Forbidden: not your post" },
+        403
+      );
 
     const result = await pool.query(
       `UPDATE posts 
@@ -125,10 +137,14 @@ postRoute.put("/:id", async (c) => {
       [title || post.title, content || post.content, id]
     );
 
-    return c.json({ success: true, data: result.rows[0] });
+    return c.json({
+      success: true,
+      message: "Post updated successfully",
+      data: result.rows[0],
+    });
   } catch (err) {
     console.error(err);
-    return c.json({ message: "Server error" }, 500);
+    return c.json({ success: false, message: "Server error" }, 500);
   }
 });
 
@@ -140,17 +156,19 @@ postRoute.delete("/:id", async (c) => {
 
     const postRes = await pool.query("SELECT * FROM posts WHERE id = $1", [id]);
     if (postRes.rows.length === 0)
-      return c.json({ message: "Post not found" }, 404);
+      return c.json({ success: false, message: "Post not found" }, 404);
 
     const post = postRes.rows[0];
-    if (user.role !== "admin" && post.user_id !== user.id) {
-      return c.json({ message: "Forbidden: not your post" }, 403);
-    }
+    if (user.role !== "admin" && post.user_id !== user.id)
+      return c.json(
+        { success: false, message: "Forbidden: not your post" },
+        403
+      );
 
     await pool.query("DELETE FROM posts WHERE id = $1", [id]);
-    return c.json({ success: true, message: "Post deleted" });
+    return c.json({ success: true, message: "Post deleted successfully" });
   } catch (err) {
     console.error(err);
-    return c.json({ message: "Server error" }, 500);
+    return c.json({ success: false, message: "Server error" }, 500);
   }
 });
