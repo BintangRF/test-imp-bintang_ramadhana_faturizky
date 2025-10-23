@@ -1,0 +1,53 @@
+version: "3.9"
+
+services:
+  # Database (PostgreSQL)
+  db:
+    image: postgres:15-alpine
+    container_name: hono_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: hono_user
+      POSTGRES_PASSWORD: hono_password
+      POSTGRES_DB: hono_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./server/src/db/schema.sql:/docker-entrypoint-initdb.d/1_schema.sql
+      - ./server/src/db/seed.sql:/docker-entrypoint-initdb.d/2_seed.sql
+      - db_data:/var/lib/postgresql/data
+
+  # Backend (Hono.js)
+  backend:
+    build: ./server
+    container_name: hono_backend
+    restart: always
+    env_file:
+      - ./server/.env
+    ports:
+      - "3001:3001"
+    depends_on:
+      - db
+    command: npm run dev
+    volumes:
+      - ./server:/app
+      - /app/node_modules
+
+  # Frontend (Next.js)
+  frontend:
+    build: ./client
+    container_name: nextjs_frontend
+    restart: always
+    env_file:
+      - ./client/.env.local
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    command: npm run dev
+    volumes:
+      - ./client:/app
+      - /app/node_modules
+
+volumes:
+  db_data:
