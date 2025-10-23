@@ -2,8 +2,19 @@ import { Hono } from "hono";
 import { pool } from "../db/index.js";
 import { hashPassword, comparePassword } from "../utils/hash.js";
 import { signJWT } from "../utils/jwt.js";
+import { authMiddleware } from "../middlewares/authMiddleware.js";
 
-export const authRoute = new Hono();
+type Variables = {
+  user: {
+    id: number;
+    username: string;
+    role: string;
+  };
+};
+
+export const authRoute = new Hono<{ Variables: Variables }>();
+
+authRoute.use("/me", authMiddleware());
 
 // SIGNUP
 authRoute.post("/signup", async (c) => {
@@ -73,4 +84,10 @@ authRoute.post("/signout", async (c) => {
     "token=; HttpOnly; Secure; Path=/; Max-Age=0; SameSite=Strict"
   );
   return c.json({ success: true, message: "Signed out successfully" });
+});
+
+// CURRENT USER
+authRoute.get("/me", authMiddleware(), async (c) => {
+  const user = c.get("user");
+  return c.json({ success: true, user });
 });
