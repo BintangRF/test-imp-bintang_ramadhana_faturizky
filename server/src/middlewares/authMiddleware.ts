@@ -1,7 +1,7 @@
 import type { Context, Next } from "hono";
 import { verifyJWT } from "../utils/jwt.js";
 
-export const authMiddleware = (role?: "admin" | "viewer") => {
+export const authMiddleware = (roles?: ("admin" | "viewer")[]) => {
   return async (c: Context, next: Next) => {
     const cookieHeader = c.req.header("Cookie");
     if (!cookieHeader) {
@@ -22,7 +22,7 @@ export const authMiddleware = (role?: "admin" | "viewer") => {
       const payload: any = verifyJWT(token);
       c.set("user", payload);
 
-      if (role && payload.role !== role) {
+      if (roles && !roles.includes(payload.role)) {
         return c.json({ message: "Forbidden: insufficient role" }, 403);
       }
 

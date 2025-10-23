@@ -15,6 +15,9 @@ export const postRoute = new Hono<{ Variables: Variables }>();
 // Middleware auth, semua endpoint butuh login
 postRoute.use("*", authMiddleware());
 
+// Middleware auth apabila akses hanya untuk role tertentu
+// postRoute.use("/admin/*", authMiddleware(["admin"]));
+
 // GET: List posts
 postRoute.get("/", async (c) => {
   try {
