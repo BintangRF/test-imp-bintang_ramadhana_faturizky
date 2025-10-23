@@ -9,7 +9,14 @@ import { postRoute } from "./routes/posts.js";
 dotenv.config();
 
 const app = new Hono();
-app.use("*", cors());
+app.use(
+  "*",
+  cors({
+    origin: process.env.FE_URL || "",
+    credentials: true,
+  })
+);
+
 app.use("*", logger());
 
 app.route("/auth", authRoute);

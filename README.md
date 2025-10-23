@@ -45,6 +45,7 @@ NODE_ENV=development
 # JWT CONFIG
 JWT_SECRET=supersecretkey
 APP_NAME=Hono Backend
+FE_URL=http://localhost:3000
 
 ```
 
