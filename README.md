@@ -109,15 +109,14 @@ Pastikan sudah menginstal **Docker** dan **Docker Compose**.
 docker compose up --build
 ```
 
-2. **Install dependency di container (hanya pertama kali atau jika ada library baru)**
+2. **Install dependency TypeScript dan types di folder `server`** (hanya pertama kali atau jika ada library baru)
 
 ```bash
-# Backend
-docker exec -it hono_backend sh -c "npm install"
-
-# Frontend
-docker exec -it nextjs_frontend sh -c "npm install"
+cd server
+npm install --save-dev typescript tsx @types/node @types/bcrypt @types/jsonwebtoken @types/pg
 ```
+
+> Ini akan menginstal semua `devDependencies` yang dibutuhkan oleh TypeScript dan library project secara lokal di `server/node_modules`. Tidak perlu install global.
 
 3. **Akses aplikasi**
 
