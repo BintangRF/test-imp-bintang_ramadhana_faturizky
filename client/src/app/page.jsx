@@ -7,7 +7,7 @@ export default function HomePage() {
 
   return (
     <div className="flex flex-col justify-center items-center h-screen bg-base-200">
-      <h1 className="text-4xl font-bold mb-4 text-primary">
+      <h1 className="text-4xl font-bold mb-4 text-primary text-center">
         Selamat Datang di Hono Blog
       </h1>
       <p className="mb-6 text-base text-base-content/80">

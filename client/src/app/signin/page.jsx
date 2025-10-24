@@ -1,13 +1,22 @@
 "use client";
 
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { useMutation } from "@tanstack/react-query";
 import { api } from "@/utils/axios";
+import { Eye, EyeOff } from "lucide-react";
+import Toast from "@/components/Toast";
 
 export default function SigninPage() {
-  const { register, handleSubmit } = useForm();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({ mode: "onChange" });
   const router = useRouter();
+  const [showPassword, setShowPassword] = useState(false);
+  const [toast, setToast] = useState(null);
 
   const mutation = useMutation(
     async (data) => {
@@ -16,10 +25,13 @@ export default function SigninPage() {
     },
     {
       onSuccess: () => {
-        router.push("/dashboard");
+        setTimeout(() => router.push("/dashboard"), 500);
       },
       onError: (err) => {
-        alert(err.response?.data?.message || "Sign In gagal");
+        setToast({
+          message: err.response?.data?.message || "Sign In gagal",
+          type: "error",
+        });
       },
     }
   );
@@ -28,6 +40,13 @@ export default function SigninPage() {
 
   return (
     <div className="flex justify-center items-center h-screen bg-base-200">
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
       <form
         onSubmit={handleSubmit(onSubmit)}
         className="bg-base-100 p-8 rounded-2xl shadow-lg w-96 flex flex-col gap-4"
@@ -38,20 +57,39 @@ export default function SigninPage() {
         <p className="text-sm text-base-content/70 text-center mb-4">
           Masukkan username dan password untuk melanjutkan
         </p>
-        <input
-          type="text"
-          placeholder="Username"
-          className="input input-bordered w-full"
-          {...register("username")}
-          required
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          className="input input-bordered w-full"
-          {...register("password")}
-          required
-        />
+
+        <div className="flex flex-col">
+          <input
+            type="text"
+            placeholder="Username"
+            className="input input-bordered w-full"
+            {...register("username", { required: "Username wajib diisi" })}
+          />
+          {errors.username && (
+            <p className="text-xs text-error mt-1">{errors.username.message}</p>
+          )}
+        </div>
+
+        <div className="relative">
+          <input
+            type={showPassword ? "text" : "password"}
+            placeholder="Password"
+            className="input input-bordered w-full pr-10"
+            {...register("password", { required: "Password wajib diisi" })}
+          />
+          <button
+            type="button"
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+            onClick={() => setShowPassword(!showPassword)}
+          >
+            {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+          </button>
+
+          {errors.password && (
+            <p className="text-xs text-error mt-1">{errors.password.message}</p>
+          )}
+        </div>
+
         <button
           type="submit"
           className="btn btn-primary w-full mt-2 hover:btn-secondary transition-colors duration-300"
