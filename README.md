@@ -5,8 +5,12 @@
 ```
 server/                   → Backend (Hono.js + Prisma)
 client/                   → Frontend (Next.js + DaisyUI)
-docker-compose.yml    → Menjalankan client, server, dan PostgreSQL sekaligus
+docker-compose.yml        → Menjalankan client, server, dan PostgreSQL sekaligus
 ```
+
+- **Frontend (`client/`)**: Dipisahkan dari backend agar bisa berkembang secara independen, memudahkan deployment, dan memungkinkan penggunaan framework modern (Next.js + React Query + React Hook Form).
+- **Backend (`server/`)**: Fokus pada API, logika bisnis, autentikasi, dan database. Menggunakan Hono.js karena ringan, cepat, dan mudah diintegrasikan dengan Node.js tanpa boilerplate berlebihan.
+- **Database (PostgreSQL)**: Dijalankan terpisah agar bisa mudah di-scale, di-backup, atau diakses langsung dari client atau backend jika perlu.
 
 ---
 
@@ -15,7 +19,7 @@ docker-compose.yml    → Menjalankan client, server, dan PostgreSQL sekaligus
 | Komponen | Teknologi                      | Port |
 | -------- | ------------------------------ | ---- |
 | Frontend | Next.js (App Router) + DaisyUI | 3000 |
-| Backend  | Hono.js + Prisma ORM           | 3001 |
+| Backend  | Hono.js                        | 3001 |
 | Database | PostgreSQL (Docker)            | 5432 |
 
 ---
@@ -46,7 +50,6 @@ NODE_ENV=development
 JWT_SECRET=supersecretkey
 APP_NAME=Hono Backend
 FE_URL=http://localhost:3000
-
 ```
 
 > Jika menjalankan tanpa Docker, ubah `db` menjadi `localhost`:
@@ -65,8 +68,32 @@ NEXT_PUBLIC_API_URL=http://localhost:3001
 
 NEXT_PUBLIC_APP_NAME=Next.js Client
 NEXT_PUBLIC_ENV=development
-
 ```
+
+---
+
+## Project Structure
+
+### Client
+
+- **Next.js (App Router)**: Memungkinkan routing berbasis file dan server-side rendering bila diperlukan.
+- **React Query (`@tanstack/react-query`)**: Untuk fetching, caching, dan state management data API secara efisien.
+- **Axios**: HTTP client yang fleksibel untuk komunikasi dengan backend API.
+- **React Hook Form**: Mengelola form state dengan ringan dan validasi mudah.
+- **Lucide React**: Library ikon yang ringan, konsisten, dan customizable.
+- **DaisyUI + TailwindCSS**: Mempercepat styling, responsive UI, dan konsistensi desain.
+
+> Pemisahan frontend memudahkan testing, pengembangan fitur UI, dan skalabilitas proyek tanpa memengaruhi backend.
+
+### Server
+
+- **Hono.js**: Framework Node.js minimalis, cepat, dan ringan. Cocok untuk API CRUD sederhana sekaligus mendukung middleware seperti autentikasi JWT.
+- **Bcrypt**: Untuk hashing password aman.
+- **Dotenv**: Mengelola environment variables.
+- **JSON Web Token (`jsonwebtoken`)**: Autentikasi stateless, mudah digunakan dengan frontend terpisah.
+- **pg**: Driver PostgreSQL untuk Node.js, sederhana dan stabil.
+
+> Backend modular memisahkan logika database dan API sehingga bisa di-scale atau di-refactor tanpa memengaruhi frontend.
 
 ---
 
@@ -76,45 +103,58 @@ NEXT_PUBLIC_ENV=development
 
 Pastikan sudah menginstal **Docker** dan **Docker Compose**.
 
-1. Jalankan semua service:
+1. **Build dan jalankan container**
 
-   ```bash
-   docker compose up --build
-   ```
+```bash
+docker compose up --build
+```
 
-2. Setelah semua container aktif:
+2. **Install dependency di container (hanya pertama kali atau jika ada library baru)**
 
-   - Frontend: [http://localhost:3000](http://localhost:3000)
-   - Backend API: [http://localhost:3001](http://localhost:3001)
-   - Database: PostgreSQL di port `5432`
+```bash
+# Backend
+docker exec -it hono_backend sh -c "npm install"
 
-3. Untuk menghentikan container:
+# Frontend
+docker exec -it nextjs_frontend sh -c "npm install"
+```
 
-   ```bash
-   docker compose down
-   ```
+3. **Akses aplikasi**
 
-4. Untuk reset database:
+- Frontend: [http://localhost:3000](http://localhost:3000)
+- Backend API: [http://localhost:3001](http://localhost:3001)
+- Database: PostgreSQL di port `5432`
 
-   ```bash
-   docker compose down -v
-   ```
+> Hot-reload tetap aktif karena source code di-mount dari host ke container.
+
+4. **Hentikan container**
+
+```bash
+docker compose down
+```
+
+5. **Reset database** (hapus data lama)
+
+```bash
+docker compose down -v
+```
+
+> Volume database akan dihapus, sehingga PostgreSQL akan memulai dari state awal.
 
 ---
 
-## Opsi 2 — Non-Docker Setup
+💡 **Tips untuk tim developer:**
 
-Langkah-langkah berikut untuk menjalankan proyek **tanpa Docker**.
-Pastikan kamu sudah menginstal:
-
-- **Node.js** (versi 18 atau lebih baru)
-- **PostgreSQL** (CLI `psql` harus bisa dijalankan di terminal)
+- Jika hanya mengubah kode, cukup jalankan `docker compose up -d`.
+- Jika menambah library baru di frontend/backend, jalankan `npm install` di container terkait.
 
 ---
 
-### Jalankan Database PostgreSQL
+### Opsi 2 — Non-Docker Setup
 
-Kamu bisa pakai database lokal, atau jalankan container PostgreSQL sederhana:
+Pastikan Node.js dan PostgreSQL sudah terinstal.
+
+#### Jalankan Database PostgreSQL
 
 ```bash
 docker run --name local_postgres \
@@ -124,28 +164,15 @@ docker run --name local_postgres \
   -p 5432:5432 -d postgres:15
 ```
 
----
-
-### Buat dan Isi Database
-
-Masuk ke PostgreSQL lewat CLI:
+#### Buat dan Isi Database
 
 ```bash
 psql -U hono_user -d hono_db -h localhost
-```
-
-Lalu jalankan file schema dan seed (dari root project):
-
-```bash
 psql -U hono_user -d hono_db -h localhost -f ./BE/src/db/schema.sql
 psql -U hono_user -d hono_db -h localhost -f ./BE/src/db/seed.sql
 ```
 
-Jika muncul pesan `CREATE TABLE` dan `INSERT 0 1`, berarti berhasil.
-
----
-
-### Jalankan Backend
+#### Jalankan Backend
 
 ```bash
 cd server
@@ -153,12 +180,9 @@ npm install
 npm run dev
 ```
 
-Backend akan berjalan di:
-[http://localhost:3001](http://localhost:3001)
+Backend: [http://localhost:3001](http://localhost:3001)
 
----
-
-### Jalankan Frontend
+#### Jalankan Frontend
 
 ```bash
 cd client
@@ -166,8 +190,7 @@ npm install
 npm run dev
 ```
 
-Frontend akan berjalan di:
-[http://localhost:3000](http://localhost:3000)
+Frontend: [http://localhost:3000](http://localhost:3000)
 
 ---
 
